@@ -1,6 +1,5 @@
 import datetime
 import unittest
-
 from bill_member import calculate_bill
 
 
