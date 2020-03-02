@@ -1,7 +1,9 @@
 # coding=utf-8
 
+def data_flatten(data:dict):
+    return {'member_id':'member-123'}
+
 def calculate_bill(member_id=None, account_id=None, bill_date=None):
-    # TODO REFACTOR ME :)
     if (member_id == 'member-123' and
         account_id == 'ALL' and
             bill_date == '2017-08-31'):
