@@ -2,6 +2,9 @@
 from load_readings import get_readings
 import pandas as pd
 
+from tariff import BULB_TARIFF
+
+
 def data_flatten(data: dict):
     r = []
     for member_id in data:
@@ -16,6 +19,8 @@ def data_flatten(data: dict):
                             r.append(reading)
     return r
 
+def do_calculation(units:float, from_date:str, to_date:str, tarrif=BULB_TARIFF):
+    return 123
 
 def calculate_bill(member_id=None, account_id=None, bill_date=None):
     data = get_readings()
