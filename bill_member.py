@@ -22,6 +22,9 @@ def data_flatten(data: dict):
 
 
 def do_calculation_electricity(units: float=None, from_date: str = None, to_date: str = None, tarrif=BULB_TARIFF):
+    """
+    returns in rounded pounds
+    """
     standing_cost = 0
     if from_date or to_date:
         standing_rate = tarrif.get('electricity', {}).get('standing_charge')
@@ -31,7 +34,7 @@ def do_calculation_electricity(units: float=None, from_date: str = None, to_date
     units_cost = 0
     if units:
             units_cost = units * tarrif.get('electricity', {}).get('unit_rate')
-    return units_cost + standing_cost
+    return round((units_cost + standing_cost)/100,2)
 
 
 
