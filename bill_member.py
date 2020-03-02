@@ -1,5 +1,6 @@
 # coding=utf-8
 from load_readings import get_readings
+import pandas as pd
 
 def data_flatten(data: dict):
     r = []
@@ -17,6 +18,15 @@ def data_flatten(data: dict):
 
 
 def calculate_bill(member_id=None, account_id=None, bill_date=None):
+    data = get_readings()
+    r = data_flatten(data)
+    df = pd.DataFrame(r)
+    df2 = df.query(f'member_id == "{member_id}"')
+    if account_id != 'ALL':
+        df2 = df2.query(f'account_id == "{member_id}"')
+    if bill_date:
+        df2 = df2.query(f'readingDate < "{bill_date}"')
+    recent_items = df2[-2:]
     if (member_id == 'member-123' and
             account_id == 'ALL' and
             bill_date == '2017-08-31'):
