@@ -12,6 +12,7 @@ class TestBillMember(unittest.TestCase):
         self.assertEqual(amount, 27.57)
         self.assertEqual(kwh, 167)
 
+
 class TestReadSourceData(unittest.TestCase):
     def test_flatten(self):
         testdata = {
@@ -31,8 +32,17 @@ class TestReadSourceData(unittest.TestCase):
                 }
             ]
         }
-        flattened_data = data_flatten(testdata)
+        flattened_data = data_flatten(testdata)[0]
         self.assertEqual(flattened_data['member_id'], 'member-123')
+        self.assertDictEqual(flattened_data, {
+                    'cumulative': 20600,
+                    'readingDate': '2018-04-29T00:00:00.000Z',
+                    'unit': 'kWh',
+                    'account_id': 'account-abc',
+                    'member_id': 'member-123',
+                    'type': 'electricity'
+        }
+                             )
 
 
 if __name__ == '__main__':

@@ -1,11 +1,24 @@
 # coding=utf-8
+from load_readings import get_readings
 
-def data_flatten(data:dict):
-    return {'member_id':'member-123'}
+def data_flatten(data: dict):
+    r = []
+    for member_id in data:
+        for accounts in data[member_id]:
+            for account_count, account_id in enumerate(accounts):
+                for reading_count, reading_data in enumerate(data[member_id][account_count][account_id]):
+                    for reading_type_count, reading_type in enumerate(reading_data):
+                        for reading in (reading_data[reading_type]):
+                            reading['account_id'] = account_id
+                            reading['member_id'] = member_id
+                            reading['type'] = reading_type
+                            r.append(reading)
+    return r
+
 
 def calculate_bill(member_id=None, account_id=None, bill_date=None):
     if (member_id == 'member-123' and
-        account_id == 'ALL' and
+            account_id == 'ALL' and
             bill_date == '2017-08-31'):
         amount = 27.57
         kwh = 167
