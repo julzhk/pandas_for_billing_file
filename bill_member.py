@@ -1,4 +1,4 @@
-
+# coding=utf-8
 
 def calculate_bill(member_id=None, account_id=None, bill_date=None):
     # TODO REFACTOR ME :)
