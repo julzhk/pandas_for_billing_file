@@ -52,6 +52,12 @@ class TestReadSourceData(unittest.TestCase):
         })
         self.assertEqual(result,100)
     def test_calculation_standing(self):
+        result = do_calculation_electricity(units= 167,
+                                            from_date='2017-07-31T00:00:00.000Z',
+                                            to_date='2017-08-31T00:00:00.000Z')
+        self.assertEqual(result,27.57)
+
+    def test_calculation_standing_and_units(self):
         result = do_calculation_electricity(from_date='2017-08-29',to_date='2017-08-31', tarrif={
             "electricity": {
                 "unit_rate": 0,  # pence per kWh
