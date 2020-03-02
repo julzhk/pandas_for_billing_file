@@ -21,7 +21,7 @@ def data_flatten(data: dict):
     return r
 
 
-def do_calculation_electricity(units: float=None, from_date: str = None, to_date: str = None, tarrif=BULB_TARIFF):
+def do_calculation_electricity(units: float = None, from_date: str = None, to_date: str = None, tarrif=BULB_TARIFF):
     """
     returns in rounded pounds
     """
@@ -33,9 +33,8 @@ def do_calculation_electricity(units: float=None, from_date: str = None, to_date
         standing_cost = days_charged * standing_rate
     units_cost = 0
     if units:
-            units_cost = units * tarrif.get('electricity', {}).get('unit_rate')
-    return round((units_cost + standing_cost)/100,2)
-
+        units_cost = units * tarrif.get('electricity', {}).get('unit_rate')
+    return round((units_cost + standing_cost) / 100, 2)
 
 
 def calculate_bill(member_id=None, account_id=None, bill_date=None):
@@ -46,16 +45,15 @@ def calculate_bill(member_id=None, account_id=None, bill_date=None):
     if account_id != 'ALL':
         df2 = df2.query(f'account_id == "{member_id}"')
     if bill_date:
-        df2 = df2.query(f'readingDate < "{bill_date}"')
+        bill_date = parser.parse(bill_date).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        df2 = df2.query(f'readingDate <= "{bill_date}"')
     recent_items = df2[-2:]
-    if (member_id == 'member-123' and
-            account_id == 'ALL' and
-            bill_date == '2017-08-31'):
-        amount = 27.57
-        kwh = 167
-    else:
-        amount = 0.
-        kwh = 0
+    from_date, to_date = recent_items['readingDate'].values[0], recent_items['readingDate'].values[1]
+    from_electric, to_electric = recent_items['cumulative'].values[0], recent_items['cumulative'].values[1]
+    kwh = to_electric - from_electric
+    amount = do_calculation_electricity(units=kwh,
+                               from_date=from_date,
+                               to_date=to_date)
     return amount, kwh
 
 

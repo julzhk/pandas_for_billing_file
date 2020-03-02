@@ -50,21 +50,25 @@ class TestReadSourceData(unittest.TestCase):
                 "standing_charge": 0  # fixed daily charge in pence
             }
         })
-        self.assertEqual(result,1)
+        self.assertEqual(result, 1)
+
     def test_calculation_standing(self):
-        result = do_calculation_electricity(units= 167,
+        result = do_calculation_electricity(units=167,
                                             from_date='2017-07-31T00:00:00.000Z',
                                             to_date='2017-08-31T00:00:00.000Z')
-        self.assertEqual(result,27.57)
+        self.assertEqual(result, 27.57)
 
     def test_calculation_standing_and_units(self):
-        result = do_calculation_electricity(from_date='2017-08-29',to_date='2017-08-31', tarrif={
-            "electricity": {
-                "unit_rate": 0,  # pence per kWh
-                "standing_charge": 100  # fixed daily charge in pence
-            }
-        })
-        self.assertEqual(result,2)
+        result = do_calculation_electricity(from_date='2017-08-29',
+                                            to_date='2017-08-31',
+                                            tarrif={
+                                                "electricity": {
+                                                    "unit_rate": 0,  # pence per kWh
+                                                    "standing_charge": 100  # fixed daily charge in pence
+                                                }
+                                            })
+        self.assertEqual(result, 2)
+
 
 if __name__ == '__main__':
     unittest.main()
