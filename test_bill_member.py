@@ -1,6 +1,6 @@
 import datetime
 import unittest
-from bill_member import calculate_bill, data_flatten, do_calculation
+from bill_member import calculate_bill, data_flatten, do_calculation_electricity
 
 
 class TestBillMember(unittest.TestCase):
@@ -43,9 +43,22 @@ class TestReadSourceData(unittest.TestCase):
             'type': 'electricity'
         })
 
-    def test_calculation(self):
-        result = do_calculation(units=0, from_date= '31-11-01', to_date='01-12-01')
-        self.assertEqual(result,123)
+    def test_calculation_units(self):
+        result = do_calculation_electricity(units=10, tarrif={
+            "electricity": {
+                "unit_rate": 10,  # pence per kWh
+                "standing_charge": 0  # fixed daily charge in pence
+            }
+        })
+        self.assertEqual(result,100)
+    def test_calculation_standing(self):
+        result = do_calculation_electricity(from_date='2017-08-29',to_date='2017-08-31', tarrif={
+            "electricity": {
+                "unit_rate": 0,  # pence per kWh
+                "standing_charge": 1  # fixed daily charge in pence
+            }
+        })
+        self.assertEqual(result,2)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,7 @@
 # coding=utf-8
 from load_readings import get_readings
 import pandas as pd
+from dateutil import parser
 
 from tariff import BULB_TARIFF
 
@@ -19,8 +20,20 @@ def data_flatten(data: dict):
                             r.append(reading)
     return r
 
-def do_calculation(units:float, from_date:str, to_date:str, tarrif=BULB_TARIFF):
-    return 123
+
+def do_calculation_electricity(units: float=None, from_date: str = None, to_date: str = None, tarrif=BULB_TARIFF):
+    standing_cost = 0
+    if from_date or to_date:
+        standing_rate = tarrif.get('electricity', {}).get('standing_charge')
+        fromdate, todate = parser.parse(from_date), parser.parse(to_date)
+        days_charged = (todate - fromdate).days
+        standing_cost = days_charged * standing_rate
+    units_cost = 0
+    if units:
+            units_cost = units * tarrif.get('electricity', {}).get('unit_rate')
+    return units_cost + standing_cost
+
+
 
 def calculate_bill(member_id=None, account_id=None, bill_date=None):
     data = get_readings()
