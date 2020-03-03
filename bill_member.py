@@ -1,25 +1,28 @@
 # coding=utf-8
-from load_readings import get_readings
+from typing import List, Any
+
 import pandas as pd
 from dateutil import parser
 
+from load_readings import get_readings
 from tariff import BULB_TARIFF
 
 ROUND_TO_DIGITS = 2
+DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.000Z"
 
 ALL = 'ALL'
 CUMULATIVE = 'cumulative'
-DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.000Z"
 ELECTRICITY = 'electricity'
+GAS = 'gas'
 READING_DATE = 'readingDate'
 STANDING_CHARGE = 'standing_charge'
 UNIT_RATE = 'unit_rate'
 
 
-def data_flatten(data: dict):
+def data_flatten(data: dict) -> List[dict]:
     """ Take nested billing data and return as a list of dicts, with hierarchy of data flattened.
     """
-    r = []
+    r: List[dict] = []
     for member_id in data:
         for accounts in data[member_id]:
             for account_count, account_id in enumerate(accounts):
@@ -33,16 +36,24 @@ def data_flatten(data: dict):
     return r
 
 
-def do_calculation_electricity(units: float = None,
-                               from_date: str = None,
-                               to_date: str = None,
-                               tarrif:dict=BULB_TARIFF):
+def do_calculation(units: float = None,
+                   from_date: str = None,
+                   to_date: str = None,
+                   tarriff: dict = BULB_TARIFF) -> float:
     """
     returns in rounded (to nearest penny) pounds
     """
-    standing_cost = calculate_standing_cost(ELECTRICITY, from_date, to_date, tarrif)
-    units_cost = calculate_unit_cost(ELECTRICITY, units, tarrif)
-    cost = units_cost + standing_cost
+    cost :float = 0
+    standing_cost: float = calculate_standing_cost(energy_type=ELECTRICITY,
+                                                   from_date=from_date,
+                                                   to_date=to_date,
+                                                   tarriff=tarriff
+                                                   )
+    units_cost = calculate_unit_cost(energy_type=ELECTRICITY,
+                                     units=units,
+                                     tarriff=tarriff
+                                     )
+    cost += units_cost + standing_cost
     return convert_to_rounded_pounds(cost)
 
 
@@ -54,41 +65,71 @@ def convert_to_rounded_pounds(cost):
     return round(cost / 100, ROUND_TO_DIGITS)
 
 
-def calculate_unit_cost(energy_type, units, tarrif=BULB_TARIFF):
-    units_cost = 0
-    unit_rate = tarrif.get(energy_type, {}).get(UNIT_RATE)
+def calculate_unit_cost(energy_type, units, tarriff=BULB_TARIFF):
+    """
+    @energy_type:'gas'|'electricity'
+    @units:float
+    @tariff:dict
+    """
+    units_cost: float = 0
+    unit_rate: float = tarriff.get(energy_type, {}).get(UNIT_RATE, 0)
     if units:
         units_cost = units * unit_rate
     return units_cost
 
 
-def calculate_standing_cost(energy_type, from_date, to_date, tarrif=BULB_TARIFF):
-    standing_rate = tarrif.get(energy_type, {}).get(STANDING_CHARGE)
-    standing_cost = 0
-    if from_date or to_date:
+def calculate_standing_cost(energy_type: str, from_date: str, to_date: str, tarriff: dict = BULB_TARIFF) -> float:
+    standing_rate: float = tarriff.get(energy_type, {}).get(STANDING_CHARGE, 0)
+    standing_cost: float = 0
+    if from_date and to_date:
         fromdate, todate = parser.parse(from_date), parser.parse(to_date)
-        days_charged = (todate - fromdate).days
-        standing_cost = days_charged * standing_rate
+        days_charged : int = (todate - fromdate).days
+        standing_cost: float = (days_charged * standing_rate)
     return standing_cost
 
 
 def calculate_bill(member_id=None, account_id=None, bill_date=None):
     data = get_readings()
     df = pd.DataFrame(data_flatten(data))
-    df2 = df.query(f'member_id == "{member_id}"')
-    if account_id != ALL:
-        df2 = df2.query(f'account_id == "{member_id}"')
+    df = filter_df_by_member_id(df, member_id)
+    df = filter_df_by_account_id(df, account_id)
+    df = filter_df_by_bill_date(df, bill_date)
+    recent_items = filter_df_recent_items(df, 2)
+    from_date, to_date = extract_df_by_column(recent_items=recent_items,
+                                              column_label=READING_DATE)
+    prev_electric_reading, bill_date_electric_reading = extract_df_by_column(recent_items=recent_items,
+                                                                             column_label=CUMULATIVE)
+    kwh = bill_date_electric_reading - prev_electric_reading
+    amount = do_calculation(units=kwh,
+                            from_date=from_date,
+                            to_date=to_date)
+    return amount, kwh
+
+
+def extract_df_by_column(recent_items, column_label):
+    return (recent_items[column_label].values[0],
+            recent_items[column_label].values[1])
+
+
+def filter_df_recent_items(df2, recent_item_count=2):
+    return df2[-recent_item_count:]
+
+
+def filter_df_by_bill_date(df2, bill_date):
     if bill_date:
         bill_date = parser.parse(bill_date).strftime(DATE_FORMAT)
         df2 = df2.query(f'{READING_DATE} <= "{bill_date}"')
-    recent_items = df2[-2:]
-    from_date, to_date = recent_items[READING_DATE].values[0], recent_items[READING_DATE].values[1]
-    from_electric, to_electric = recent_items[CUMULATIVE].values[0], recent_items[CUMULATIVE].values[1]
-    kwh = to_electric - from_electric
-    amount = do_calculation_electricity(units=kwh,
-                                        from_date=from_date,
-                                        to_date=to_date)
-    return amount, kwh
+    return df2
+
+
+def filter_df_by_account_id(df2, account_id):
+    if account_id != ALL:
+        df2 = df2.query(f'account_id == "{account_id}"')
+    return df2
+
+
+def filter_df_by_member_id(df, member_id):
+    return df.query(f'member_id == "{member_id}"')
 
 
 def calculate_and_print_bill(member_id, account, bill_date):
